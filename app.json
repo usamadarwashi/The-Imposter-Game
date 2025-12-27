@@ -1,18 +1,21 @@
 {
   "expo": {
-    "name": "imposter",
+    "name": "المندس",
     "slug": "imposter",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/gg.png",
     "scheme": "imposter",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.usama.imposter",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/gg.png",
@@ -31,7 +34,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/gg.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
@@ -39,30 +42,17 @@
             "backgroundColor": "#000000"
           }
         }
-      ],
-      [
-        "expo-font",
-        {
-          "fonts": ["../assets/fonts/stc.ttf"],
-          "android": {
-            "fonts": [
-              {
-                "fontFamily": "stc",
-                "fontDefinitions": [
-                  {
-                    "path": "../assets/fonts/stc.ttf",
-                    "weight": 800
-                  }
-                ]
-              }
-            ]
-          }
-        }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "9db9e1ac-a4a7-463f-a212-dac76fdbbd32"
+      }
     }
   }
 }

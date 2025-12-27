@@ -9,12 +9,9 @@ import {
   StyleSheet,
   Keyboard 
 } from "react-native";
-import { useFonts } from "expo-font";
-import * as SplashScreen from "expo-splash-screen";
 import { LinearGradient } from "expo-linear-gradient";
 import { AppText } from "@/components/AppText";
 
-// ✅ استخدم JSON من ملف: const WORDS = require("./words.json");
 const WORDS =require("../assets/data/words.json");
 
 // الفئات المطلوبة في لعبتك (5 فقط كما طلبت)
@@ -50,12 +47,7 @@ function sample<T>(arr: T[]) {
   return arr[randInt(arr.length)];
 }
 
-export default function App() {
-  const [fontsLoaded] = useFonts({
-    stc: require("../assets/fonts/stc.ttf"),
-  });
-
-
+export default function GameApp() {
   const [selectedCategories, setSelectedCategories] = useState<Record<CategoryKey, boolean>>({
     places: true,
     food: true,
@@ -159,13 +151,6 @@ function validateBeforeStart(): boolean {
   }
   return true;
 }
-
-
-  if (!fontsLoaded) {
-    return null; // or a loading screen
-  }
-
-    SplashScreen.hideAsync();
 
   function startNewRound() {
     setShowImposter(false);
@@ -380,7 +365,7 @@ colors={["#1F2636", "#0E1320"]}
       >
         {isImposter ? (
           <AppText style={[styles.bigWord, styles.bigWordImposter]}>
-            أنت المُندسّ
+         أنت المندس
           </AppText>
         ) : (
           <AppText style={styles.bigWord}>
@@ -420,13 +405,13 @@ colors={["#1F2636", "#0E1320"]}
           </AppText>
 
           <PrimaryButton
-            title="عرض المُندسّ"
+            title="عرض المندس"
             onPress={() => setShowImposter(true)}
           />
         </>
       ) : (
         <>
-          <AppText style={styles.sectionTitle}>المُندسّ</AppText>
+          <AppText style={styles.sectionTitle}>المندس</AppText>
 
           <View style={styles.imposterRevealBox}>
             <AppText style={styles.imposterRevealText}>

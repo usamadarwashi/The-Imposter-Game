@@ -1,4 +1,4 @@
-import {StyleSheet} from "react-native";
+import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
   safe: {
@@ -111,7 +111,7 @@ export const styles = StyleSheet.create({
 
   // Gradient buttons
   gbtn: {
-    borderRadius: 18,
+    borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 14,
     alignItems: "center",

@@ -314,16 +314,16 @@ function addPlayer() {
         <View style={{ flex: 1 }}>
           <DraggableFlatList
             data={players}
+            extraData={players.length}
             keyExtractor={(item) => item.id}
             onDragEnd={({ data }) => setPlayers(data)}
             activationDistance={6}
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ paddingBottom: 110 }} // space for sticky button
+            contentContainerStyle={{ paddingBottom: 150 }}
             ListHeaderComponent={
               <>
-                <View style={styles.container}>
+                <View style={styles.setupHeader}>
                   <AppText style={styles.h2}>1) اختيار الفئات</AppText>
-
                   <View style={styles.chipsWrap}>
                     {CATEGORY_KEYS.map((k) => (
                       <Pressable
@@ -381,8 +381,6 @@ function addPlayer() {
               </View>
             )}
           />
-
-          {/* Sticky bottom action */}
           <View style={styles.stickyBottomBar}>
             <PrimaryButton title="ابدأ جولة جديدة" onPress={startNewRound} />
           </View>

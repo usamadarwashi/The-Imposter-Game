@@ -1,6 +1,6 @@
 import { Text, TextProps } from "react-native";
 
-export function AppText(props: TextProps) {
+export default function AppText(props: TextProps) {
   return (
     <Text {...props} style={[{ fontFamily: "stc" }, props.style]} />
   );

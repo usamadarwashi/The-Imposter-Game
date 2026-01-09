@@ -1,31 +1,38 @@
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
+  InteractionManager,
   Keyboard,
   Modal,
   Pressable,
-  SafeAreaView,
-  ScrollView,
   TextInput,
   View
 } from "react-native";
-import { AppText } from "../components/AppText";
-import { PrimaryButton } from "../components/PrimaryButton";
-import { SecondaryButton } from "../components/SecondaryButton";
-import { styles } from "../Styles";
+import DraggableFlatList, { RenderItemParams } from "react-native-draggable-flatlist";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import AppText from "../components/AppText";
+import PrimaryButton from "../components/PrimaryButton";
+import SecondaryButton from "../components/SecondaryButton";
+import styles from "../Styles";
+
+
+
 const WORDS =require("../../assets/data/words.json");
 
-const CATEGORY_KEYS = ["places", "food", "objects", "sports", "jobs", "countries", "quran_chapters", "football_players"] as const;
+const CATEGORY_KEYS = ["places", "food", "objects", "sports", "jobs", "countries", "quran_chapters", "football_players", "cartoon", "anime"] as const;
 
 const CATEGORY_AR: Record<(typeof CATEGORY_KEYS)[number], string> = {
   places: "أماكن",
-  food: "أكل",
+  food: "غذاء",
   objects: "أشياء",
   sports: "رياضات",
   jobs: "وظائف",
   countries: "دول",
   quran_chapters: "سور",
-  football_players: "لاعبين كرة"
+  football_players: "لاعبين كرة",
+  cartoon: "رسوم متحركة",
+  anime: "أنمي"
 };
 
 type ModalMode = "info" | "confirm";
@@ -57,13 +64,14 @@ export default function GameApp() {
     jobs: true,
     countries: true,
     quran_chapters: true,
-    football_players: true
+    football_players: true,
+    cartoon: true,
+    anime: true
   });
-
-  const [players, setPlayers] = useState<string[]>([]);
+  type Player = { id: string; name: string };
+  const [players, setPlayers] = useState<Player[]>([]);
   const [newPlayerName, setNewPlayerName] = useState("");
   const [showImposter, setShowImposter] = useState(false);
-
   const [round, setRound] = useState<RoundState | null>(null);
   const [phase, setPhase] = useState<"setup" | "reveal" | "discussion">("setup");
   const [uiModalOpen, setUiModalOpen] = useState(false);
@@ -74,24 +82,87 @@ export default function GameApp() {
   const [uiModalConfirmText, setUiModalConfirmText] = useState("نعم");
   const [uiModalCancelText, setUiModalCancelText] = useState("إلغاء");
   const uiModalOnConfirmRef = React.useRef<null | (() => void)>(null);
+  const [playerEditModalOpen, setPlayerEditModalOpen] = useState(false);
+  const [editPlayerIndex, setEditPlayerIndex] = useState(-1);
+  const [editPlayerName, setEditPlayerName] = useState("");
+  const [editPlayerId, setEditPlayerId] = useState<string | null>(null);
+
+  const editInputRef = useRef<TextInput>(null);
+  const currentPlayerName =
+  round && players?.[round.currentRevealIndex]
+    ? players[round.currentRevealIndex].name
+    : "";
 
   const activeCategoryKeys = useMemo(() => {
     return CATEGORY_KEYS.filter((k) => selectedCategories[k]);
   }, [selectedCategories]);
 
+  const focusEditInput = () => {
+    InteractionManager.runAfterInteractions(() => {
+      setTimeout(() => {
+        editInputRef.current?.focus();
+      }, 120);
+    });
+  };
+
+
+  function openPlayerEditMenu(player: Player) {
+  setEditPlayerId(player.id);
+  setEditPlayerName(player.name);
+  setPlayerEditModalOpen(true);
+      requestAnimationFrame(() => {
+      setTimeout(() => {
+        editInputRef.current?.focus();
+      }, 100);
+    });
+}
+
+  const closePlayerEditModal = () => {
+    setPlayerEditModalOpen(false);
+    setEditPlayerIndex(-1);
+    setEditPlayerName("");
+    setEditPlayerId(null);
+    };
+
+  const handleSavePlayerName = () => {
+  if (!editPlayerId || !editPlayerName.trim()) return;
+
+  setPlayers((prev) =>
+    prev.map((p) =>
+      p.id === editPlayerId
+        ? { ...p, name: editPlayerName.trim() }
+        : p
+    )
+  );
+
+  closePlayerEditModal();
+};
+
+  const handleDeletePlayer = () => {
+  if (!editPlayerId) return;
+
+  setPlayers((prev) => prev.filter((p) => p.id !== editPlayerId));
+  closePlayerEditModal();
+};
+
+
   function toggleCategory(key: CategoryKey) {
     setSelectedCategories((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
-  function addPlayer() {
-    const name = newPlayerName.trim();
-    if (!name) return;
+function addPlayer() {
+  const name = newPlayerName.trim();
+  if (!name) return;
 
-    setPlayers((prev) => [...prev, name]);
-    setNewPlayerName("");
+  setPlayers((prev) => [
+    ...prev,
+    { id: `${Date.now()}-${Math.random()}`, name },
+  ]);
 
-    Keyboard.dismiss();
-  }
+  setNewPlayerName("");
+  Keyboard.dismiss();
+}
+
 
   function requestResetToSetup() {
     showConfirm({
@@ -150,10 +221,6 @@ export default function GameApp() {
     setUiModalCancelText(opts.cancelText ?? "إلغاء");
     uiModalOnConfirmRef.current = opts.onConfirm;
     setUiModalOpen(true);
-  }
-
-  function removePlayer(idx: number) {
-    setPlayers((prev) => prev.filter((_, i) => i !== idx));
   }
 
   function validateBeforeStart(): boolean {
@@ -236,78 +303,92 @@ export default function GameApp() {
     setRound(updated);
   }
 
-
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaProvider style={styles.safe}>
       <View style={styles.header}>
         <AppText style={styles.h1}>من المندس؟</AppText>
         <AppText style={styles.sub}>اختر الفئات، أضف لاعبين، وابدأ الجولة.</AppText>
       </View>
 
       {phase === "setup" && (
-        <>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          <AppText style={styles.h2}>1) اختيار الفئات</AppText>
-          <View style={styles.chipsWrap}>
-            {CATEGORY_KEYS.map((k) => (
-              <Pressable
-                key={k}
-                onPress={() => toggleCategory(k)}
-                style={[styles.chip, selectedCategories[k] ? styles.chipOn : styles.chipOff]}
-              >
-                <AppText style={styles.chipText}>{CATEGORY_AR[k]}</AppText>
-              </Pressable>
-            ))}
-          </View>
+        <View style={{ flex: 1 }}>
+          <DraggableFlatList
+            data={players}
+            keyExtractor={(item) => item.id}
+            onDragEnd={({ data }) => setPlayers(data)}
+            activationDistance={6}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ paddingBottom: 110 }} // space for sticky button
+            ListHeaderComponent={
+              <>
+                <View style={styles.container}>
+                  <AppText style={styles.h2}>1) اختيار الفئات</AppText>
 
-          <AppText style={styles.h2}>2) اللاعبون</AppText>
+                  <View style={styles.chipsWrap}>
+                    {CATEGORY_KEYS.map((k) => (
+                      <Pressable
+                        key={k}
+                        onPress={() => toggleCategory(k)}
+                        style={[
+                          styles.chip,
+                          selectedCategories[k] ? styles.chipOn : styles.chipOff,
+                        ]}
+                      >
+                        <AppText style={styles.chipText}>{CATEGORY_AR[k]}</AppText>
+                      </Pressable>
+                    ))}
+                  </View>
 
-          <View style={styles.row}>
-            <TextInput
-              value={newPlayerName}
-              onChangeText={setNewPlayerName}
-              placeholder="اسم اللاعب"
-              placeholderTextColor="#777"
-              style={[styles.input, { fontFamily: "stc" }]}
-              textAlign="right"
-            />
-            <Pressable onPress={addPlayer} style={{ width: 110 }}>
-            <LinearGradient
-              colors={["#3FAF6C", "#27573eff"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.gbtnSmall}
-            >
-              <AppText style={styles.gbtnText}>إضافة</AppText>
-            </LinearGradient>
-            </Pressable>
-          </View>
+                  <AppText style={styles.h2}>2) اللاعبون</AppText>
 
-          <View style={styles.list}>
-            {players.map((p, idx) => (
-              <View key={`${p}-${idx}`} style={styles.listItem}>
-                <AppText style={styles.listText}>{p}</AppText>
+                  <View style={styles.row}>
+                    <TextInput
+                      value={newPlayerName}
+                      onChangeText={setNewPlayerName}
+                      placeholder="اسم اللاعب"
+                      placeholderTextColor="#777"
+                      style={[styles.input, { fontFamily: "stc" }]}
+                      textAlign="right"
+                    />
 
-                <Pressable onPress={() => removePlayer(idx)} style={{ width: 90 }}>
-                  <LinearGradient
-                    colors={["#FF3B3B", "#791129ff"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.gbtnSmall}
-                  >
-                    <AppText style={styles.gbtnText}>حذف</AppText>
+                    <Pressable onPress={addPlayer} style={{ width: 110 }}>
+                      <LinearGradient
+                        colors={["#3FAF6C", "#27573eff"]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.gbtnSmall}
+                      >
+                        <AppText style={styles.gbtnText}>إضافة</AppText>
+                      </LinearGradient>
+                    </Pressable>
+                  </View>
+                </View>
+              </>
+            }
+            renderItem={({ item, drag, isActive }: RenderItemParams<Player>) => (
+              <View style={[styles.listItem, isActive && { opacity: 0.85 }]}>
+                <Pressable onPressIn={drag} style={styles.dragHandle} hitSlop={10}>
+                  <Ionicons name="reorder-three" size={22} color="#9aa3b2" />
+                </Pressable>
+
+                <AppText style={styles.listText}>{item.name}</AppText>
+
+                <Pressable onPress={() => openPlayerEditMenu(item)} style={{ width: 90 }}>
+                  <LinearGradient colors={["#1F2636", "#0E1320"]} style={styles.gbtnSmall}>
+                    <AppText style={styles.gbtnText}>تعديل</AppText>
                   </LinearGradient>
                 </Pressable>
               </View>
-            ))}
-          </View>
-        </ScrollView>
-        <View style={{ marginBottom: 50 }}>
-        <PrimaryButton title="ابدأ جولة جديدة" onPress={startNewRound} />
-        </View>
-        </>
+            )}
+          />
 
+          {/* Sticky bottom action */}
+          <View style={styles.stickyBottomBar}>
+            <PrimaryButton title="ابدأ جولة جديدة" onPress={startNewRound} />
+          </View>
+        </View>
       )}
+
 
       {phase === "reveal" && round && (
         <View style={styles.container}>
@@ -317,7 +398,8 @@ export default function GameApp() {
             {round.step === "name" && (
               <>
                 <AppText style={styles.metaLabel}>الدور على</AppText>
-                <AppText style={styles.metaValue}>{players[round.currentRevealIndex]}</AppText>
+                <AppText style={styles.metaValue}>{currentPlayerName}</AppText>
+
 
                 <AppText style={styles.note}>
                   سلّم الجوال لهذا اللاعب. اضغط “عرض الكلمة” فقط عندما يكون جاهزًا.
@@ -334,9 +416,7 @@ export default function GameApp() {
                 return (
                   <>
                     <AppText style={styles.metaLabel}>اللاعب</AppText>
-                    <AppText style={styles.metaValue}>
-                      {players[round.currentRevealIndex]}
-                    </AppText>
+                    <AppText style={styles.metaValue}>{currentPlayerName}</AppText>
 
                     <AppText style={styles.metaLabel}>الفئة</AppText>
                     <AppText style={styles.metaValue}>
@@ -400,7 +480,7 @@ export default function GameApp() {
 
                 <View style={styles.imposterRevealBox}>
                   <AppText style={styles.imposterRevealText}>
-                    {players[round.imposterIndex]}
+                    {players?.[round.imposterIndex]?.name ?? ""}
                   </AppText>
                 </View>
 
@@ -474,10 +554,61 @@ export default function GameApp() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+      <Modal
+        visible={playerEditModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={closePlayerEditModal}
+        onShow={focusEditInput}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <AppText style={styles.modalTitle}>تعديل اللاعب</AppText>
+            <View style={{ marginTop: 6, }}>
+            <TextInput
+              ref={editInputRef}
+              value={editPlayerName}
+              onChangeText={setEditPlayerName}
+              placeholder="اسم اللاعب"
+              placeholderTextColor="#777"
+              style={[styles.input, { fontFamily: "stc" }]}
+              textAlign="right"
+              autoFocus={false}
+              onSubmitEditing={handleSavePlayerName}
+              blurOnSubmit={false} 
+            />
+            </View>
+            <View style={styles.modalRow}>
+              <Pressable 
+                onPress={handleDeletePlayer} 
+                style={{ flex: 1, marginLeft: 8 }}
+              >
+                <LinearGradient
+                  colors={["#FF3B3B", "#4A0D16"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.gbtn}
+                >
+                  <AppText style={styles.gbtnTextSecondary}>حذف</AppText>
+                </LinearGradient>
+              </Pressable>
+              <Pressable 
+                onPress={handleSavePlayerName} 
+                style={{ flex: 1, marginRight: 8 }}
+              >
+                <LinearGradient
+                  colors={["#3FAF6C", "#1B3A2A"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.gbtn}
+                >
+                  <AppText style={styles.gbtnTextSecondary}>حفظ</AppText>
+                </LinearGradient>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaProvider>
   );
 }
-
-
-
-

@@ -1,10 +1,10 @@
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Pressable } from "react-native";
-import { styles } from "../Styles";
-import { AppText } from "./AppText";
+import styles from "../Styles";
+import AppText from "./AppText";
 
-export function PrimaryButton(props: { title: string; onPress: () => void; disabled?: boolean }) {
+export default function PrimaryButton(props: { title: string; onPress: () => void; disabled?: boolean }) {
   return (
     <Pressable onPress={props.onPress} disabled={props.disabled} style={{ width: "100%" }}>
       <LinearGradient

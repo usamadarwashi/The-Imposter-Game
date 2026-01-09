@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 
-export const styles = StyleSheet.create({
+const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: "#070B14",
@@ -87,10 +87,12 @@ export const styles = StyleSheet.create({
     paddingVertical: 12,
     color: "#EAF2FF",
     backgroundColor: "rgba(255,255,255,0.05)",
+    minHeight: 48,
+    paddingTop: 12,
+    paddingBottom: 12,
   },
 
-  // List
-  list: { gap: 10 },
+  list: { gap: 10, marginBottom: 70 },
 
   listItem: {
     flexDirection: "row-reverse",
@@ -100,16 +102,18 @@ export const styles = StyleSheet.create({
     borderColor: "rgba(234,242,255,0.10)",
     backgroundColor: "rgba(255,255,255,0.05)",
     borderRadius: 18,
-    padding: 14,
+    padding: 5,
+    marginBottom: 5
   },
 
   listText: {
     color: "#EAF2FF",
     fontSize: 16,
     textAlign: "right",
+    flex: 1, 
+    marginHorizontal: 8, 
   },
 
-  // Gradient buttons
   gbtn: {
     borderRadius: 14,
     paddingVertical: 14,
@@ -144,7 +148,6 @@ export const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  // Cards: more contrast
   card: {
     borderRadius: 22,
     padding: 18,
@@ -154,7 +157,6 @@ export const styles = StyleSheet.create({
     gap: 12,
   },
 
-  // Meta labels
   metaLabel: {
     color: "rgba(234,242,255,0.70)",
     textAlign: "right",
@@ -168,7 +170,6 @@ export const styles = StyleSheet.create({
     fontSize: 16,
   },
 
-  // Word box: chess green vibe
   wordBox: {
     marginTop: 10,
     marginBottom: 10,
@@ -218,7 +219,6 @@ export const styles = StyleSheet.create({
     marginVertical: 10,
   },
 
-  // Discussion
   discussionHeader: {
     color: "#EAF2FF",
     fontSize: 20,
@@ -296,9 +296,34 @@ modalText: {
 modalRow: {
   flexDirection: "row-reverse",
   gap: 10,
-  marginTop: 6,
+  marginTop: 30,
+},
+dragHandle: {
+  width: 36,
+  height: 36,
+  alignItems: "center",
+  justifyContent: "center",
+},
+
+stickyBottomBar: {
+  position: "absolute",
+  left: 0,
+  right: 0,
+  bottom: 0,
+  paddingBottom: 50,
+  paddingHorizontal: 16,
+  paddingTop: 10,
+  borderTopWidth: 1,
+  borderTopColor: "rgba(255,255,255,0.08)",
+  backgroundColor: "#070B14",
+
+},
+setupHeader: {
+  paddingHorizontal: 18,
+  paddingBottom: 12,
 },
 
 });
 
 
+export default styles;

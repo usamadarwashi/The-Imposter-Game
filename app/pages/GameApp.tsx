@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   InteractionManager,
   Keyboard,
@@ -17,6 +18,14 @@ import SecondaryButton from "../components/SecondaryButton";
 import styles from "../Styles";
 
 
+const STORAGE_KEY = "imposter_game_state_v1";
+
+type Player = { id: string; name: string };
+
+type PersistedState = {
+  selectedCategories: Record<CategoryKey, boolean>;
+  players: Player[];
+};
 
 const WORDS =require("../../assets/data/words.json");
 
@@ -68,7 +77,6 @@ export default function GameApp() {
     cartoon: true,
     anime: true
   });
-  type Player = { id: string; name: string };
   const [players, setPlayers] = useState<Player[]>([]);
   const [newPlayerName, setNewPlayerName] = useState("");
   const [showImposter, setShowImposter] = useState(false);
@@ -104,6 +112,37 @@ export default function GameApp() {
       }, 120);
     });
   };
+
+const [hydrated, setHydrated] = useState(false);
+
+useEffect(() => {
+  (async () => {
+    try {
+      const raw = await AsyncStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed: PersistedState = JSON.parse(raw);
+
+        if (parsed?.selectedCategories) setSelectedCategories(parsed.selectedCategories);
+        if (Array.isArray(parsed?.players)) setPlayers(parsed.players);
+      }
+    } catch (e) {
+      // ignore corrupted storage; start fresh
+    } finally {
+      setHydrated(true);
+    }
+  })();
+}, []);
+
+useEffect(() => {
+  if (!hydrated) return;
+
+  const payload: PersistedState = {
+    selectedCategories,
+    players,
+  };
+
+  AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(payload)).catch(() => {});
+}, [selectedCategories, players, hydrated]);
 
 
   function openPlayerEditMenu(player: Player) {
@@ -302,8 +341,9 @@ function addPlayer() {
 
     setRound(updated);
   }
-
+if (hydrated) {
   return (
+
     <SafeAreaProvider style={styles.safe}>
       <View style={styles.header}>
         <AppText style={styles.h1}>من المندس؟</AppText>
@@ -609,4 +649,14 @@ function addPlayer() {
       </Modal>
     </SafeAreaProvider>
   );
+} else {
+  return(
+      <SafeAreaProvider style={styles.safe}>
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <AppText style={styles.h2}>جاري التحميل…</AppText>
+      </View>
+    </SafeAreaProvider>
+  );
+}
+
 }
